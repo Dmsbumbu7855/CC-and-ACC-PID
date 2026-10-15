@@ -1,0 +1,79 @@
+A = [0 -1 0 0 0; 0 0 1 0 0; 0 0 0 1 0; 0 0 0 0 1; 0 0 0 -0.0264 -2.0132];
+B = [0 0 0 0 0.02]';
+Bd = [1 0 0 0 0]';
+C = [1 0 0 0 0];
+
+A_a = [A zeros(5, 1); C 0];   % Augmented system matrix
+B_a = [B; 0];          % Augmented input matrix
+Bd_a = [Bd; 0];        % Augmented disturbance matrix
+Br = [0; 0; 0; 0; 0; -1];  % Reference input affects integral state
+
+% Choose closed-loop poles for stability and performance
+desired_poles_aug = [-0.8+1.14j, -0.8-1.14j, -2, -3, -4, -5];
+
+K = place(A_a, B_a, desired_poles_aug);
+
+A_new = A_a - B_a*K;
+B_new = Br;
+B_new = [0 1; 0 0; 0 0; 0 0; 0 0; -1 0]
+C_new = [C 0; 0 1 0 0 0 0];
+D_new = [0 0; 0 0];
+
+%A_new = [0 -1 0 0 0 0 0; 0 0 1 0 0 0 0; 0 0 0 1 0 0 0; 0 0 0 0 1 0 0; 0 0 0 -0.0264 -2.0132 0 0; 1 0 0 0 0 0 0; 0 0 0 0 0 1 0] 
+%B_new = [0 1; 0 0; 0 0; 0 0; 0 0; -1 0; 0 0]
+
+%%
+state = ss(A_new, B_new, C_new, D_new)
+
+
+%%
+desired_poles_aug = [-0.8+1.14j, -0.8-1.14j, -3, -4, -5];
+
+K = place(A, B, desired_poles_aug);
+
+A_new = A-B*K;
+B_new = Bd;
+C_new = [0 1 0 0 0];
+B_new = [0 -1 0 0 0]';
+
+state = ss(A_new, B_new, C_new, 0);
+
+step(state)
+
+%%
+A = [0 1 0 0 0 0; 0 0 1 0 0 0; 0 0 0 1 0 0; 0 0 0 0 1 0; 0 0 0 -0.0264 -2.0132 0; 1 0 0 0 0 0];
+B = [0 0 0 0 0.02 0]';
+C = [0 1 0 0 0 0];
+
+ev = 0.1;
+zeta = 0.4;
+t_tr = 10;
+w_tr = 4/(zeta*t_tr)
+w_ev = 2 * zeta / ev 
+w = w_tr
+ev = 2*zeta/w
+% w = max(w_tr, w_ev)
+
+pol = roots([1 2*zeta*w w^2])
+
+%desired_poles_aug = [-1+1.14j, -1-1.14j, -20, -21, -22, -23];
+desired_poles_aug = [pol(1), pol(2), -20, -21, -22, -23];
+%desired_poles_aug = [p1, p2, p3, p4, p5, p6];
+K = place(A, B, desired_poles_aug);
+
+A_new = A-B*K;
+B_new = [0 0 0 0 0 -1]';
+C_new = C;
+
+state = ss(A_new, B_new, C_new, 0);
+
+u0=20; g=9.81; m=1000; f=0.015; Theta=0;
+rho=1.202; A=1; Cd=0.5; uw=2;
+Tau=(m/(rho*A*Cd*(u0+uw))); K=Tau/m;
+
+G_cl = zpk([], [0 -2], 20);
+G_long = tf(K, [Tau 1]);
+
+Gp = G_cl * G_long;
+
+gr = 
